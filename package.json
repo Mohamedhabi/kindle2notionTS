@@ -2,13 +2,19 @@
   "name": "kindle2notionjs",
   "version": "0.1.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "author": "Mohamed HABI",
   "license": "MIT",
   "dependencies": {
     "@notionhq/client": "^2.2.14"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
   }
 }
