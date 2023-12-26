@@ -1,5 +1,3 @@
-// controllers/parse_clippings.ts
-import { Highlight } from '../models/highlight.js';
 import { Book } from '../models/book.js';
 
 export function parseClippings(inputData: string): Book[] {
@@ -53,6 +51,7 @@ export function parseClippings(inputData: string): Book[] {
             }
         }
     });
+    // For each note put it inside its corresponding highlight
     books.forEach((book) => {
         book.integrateNotesInHighlights()
     })
