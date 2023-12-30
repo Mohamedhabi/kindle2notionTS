@@ -2,29 +2,33 @@
 export const createBookTemplate = (database_id: string, title: string, author: string): any => {
     return {
         parent: {
-        database_id: database_id
+            database_id: database_id
+        },
+        icon: {
+            type: "emoji",
+            emoji: "📘"
         },
         properties: {
-        "Title": {
-            title: [
-            {
-                type: 'text',
-                text: {
-                content: title,
+            Title: {
+                title: [
+                {
+                    type: 'text',
+                    text: {
+                    content: title,
+                    },
                 },
+                ],
             },
-            ],
-        },
-        "Author": {
-            rich_text: [
-            {
-                type: "text",
-                text: {
-                content: author,
+            Author: {
+                rich_text: [
+                {
+                    type: "text",
+                    text: {
+                    content: author,
+                    },
                 },
+                ],
             },
-            ],
-        },
         },
         children: createBookPageContentTemplate()
     };
