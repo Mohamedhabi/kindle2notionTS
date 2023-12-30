@@ -3,11 +3,11 @@ import { Book } from '../models/book.js';
 export function parseClippings(inputData: string): Book[] {
     const books: Book[] = [];
     let currentBook: Book | null = null;
-    const nonUtf8 = /\uFEFF/gmu;
+    const outliers = /\uFEFF/gmu;
 
     inputData.split("\r\n==========\r\n").forEach((section) => {
         if (section.trim() !== "") {
-            const sectionFiltered = section.replace(nonUtf8, "");
+            const sectionFiltered = section.replace(outliers, "");
             const lines = sectionFiltered.split('\n');
 
             // Extract book details from the first line
