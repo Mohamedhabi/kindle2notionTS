@@ -186,7 +186,7 @@ export const createBookPageContentTemplate = (): any => {
                     {
                         type: "text",
                         text: {
-                            content: "📜 All notes",
+                            content: "📜 All highlights",
                         }
                     }
                 ],
