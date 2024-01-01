@@ -24,7 +24,7 @@ export const createHighlightTemplate = (
                     {
                         type: 'text',
                         text: {
-                        content: content[0].substring(0, 10),
+                        content: content[0].substring(0, 50),
                         },
                     },
                 ],
