@@ -1,4 +1,5 @@
 import { Book } from '../models/book.js';
+import { Highlight } from '../models/highlight.js';
 
 export function parseClippings(inputData: string): Book[] {
     const books: Book[] = [];
@@ -33,13 +34,13 @@ export function parseClippings(inputData: string): Book[] {
                 const highlightMatch = lines[1].match(regex);
                 if (highlightMatch) {
                     const [, , pageStart, pageEnd, locationStart, locationEnd, ] = highlightMatch.map(Number);
-                    const highlight = {
-                        content: lines.slice(3, lines.length).join('\n'),
-                        page: { start: pageStart, end: pageEnd }, // You may need to modify this based on your data
-                        location: { start: locationStart, end: locationEnd },
-                        timestamp: highlightMatch[6],
-                        notes: null,
-                    };
+                    const highlight = new Highlight(
+                        lines.slice(3, lines.length).join('\n'),
+                        highlightMatch[6],
+                        { start: locationStart, end: locationEnd },
+                        { start: pageStart, end: pageEnd },
+                      );
+                      
                     if (highlightMatch[1] === 'Note') {
                         currentBook.soloNotes.push(highlight);
                     } else {
@@ -54,6 +55,7 @@ export function parseClippings(inputData: string): Book[] {
     // For each note put it inside its corresponding highlight
     books.forEach((book) => {
         book.integrateNotesInHighlights()
+        book.updateHighlitIds()
     })
     return books;
 }

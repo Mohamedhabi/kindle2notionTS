@@ -17,6 +17,17 @@ export class Book {
 		this.soloNotes = soloNotes;
 	}
 
+	static copy(original: Book): Book {
+		return new Book(
+		  original.title,
+		  original.author,
+		  original.publisher,
+		  original.publicationYear,
+		  [...original.highlights],
+		  [...original.soloNotes]
+		);
+	}
+
 	integrateNotesInHighlights(): void {
 		var newSoloNotes: Highlight[] = [];
 
@@ -33,5 +44,14 @@ export class Book {
 		});
 
 		this.soloNotes = newSoloNotes;
+	}
+
+	updateHighlitIds(): void {
+        this.highlights.forEach((highlight) => {highlight.updateIds(this.title)})
+		this.soloNotes.forEach((highlight) => {highlight.updateIds(this.title)})
+    }
+
+	identifyBook(): string {
+		return `${this.title}-${this.author}`;
 	}
 }

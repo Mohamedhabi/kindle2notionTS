@@ -2,6 +2,7 @@ import { Client } from '@notionhq/client';
 import { Book } from '../models/book.js';
 import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 import { createBookTemplate } from '../templates/bookTemplate.js';
+import { createHighlightTemplate } from '../templates/highlightTemplates.js';
 
 class NotionSyncController {    
 	private notion: Client;
@@ -39,7 +40,120 @@ class NotionSyncController {
 		return {existingBooks, nonExistingBooks}
 	}
 
-	public async syncBooks(parsedBooks: Book[], existingBooksList: any[]): Promise<any> {
+	public filterHighlights(parsedBooks: Book[], existingHighlightsList: any[]): any {
+		const existingHighlights = existingHighlightsList.reduce((accumulator, result: DatabaseObjectResponse) => {
+			const id = result.id;
+			const idHighlightProp = result.properties?.Id['rich_text'];
+			const idHighlight = idHighlightProp.length === 0 ? "" : idHighlightProp[0]['text']['content'];
+		  
+			accumulator[idHighlight] = id;
+		  
+			return accumulator;
+		}, {} as Record<string, string>);		  
+
+		const booksWithNonExistingHighlights: Book[] = parsedBooks.map((book) => {
+			const copiedBook = Book.copy(book);
+
+			copiedBook.highlights = copiedBook.highlights.filter((highlight) => {
+				return ! existingHighlights.hasOwnProperty(highlight.id);
+			})
+
+			copiedBook.soloNotes = copiedBook.soloNotes.filter((highlight) => {
+				return ! existingHighlights.hasOwnProperty(highlight.id);
+			})
+
+			return copiedBook
+		});
+		
+		return {existingHighlights, booksWithNonExistingHighlights}
+	}
+
+	public async getNotionHighlights(): Promise<any[]> {
+		const highlightsList: any[] = [];
+		let cursor: string | undefined = undefined;
+		do {
+			const response = await this.notion.databases.query({
+				database_id: this.highlights_db_id,
+				start_cursor: cursor,
+				page_size: 100,
+			});
+			
+			highlightsList.push(...response.results);
+			cursor = response.next_cursor;
+		} while (cursor);
+
+		return highlightsList
+	}
+
+
+	public async syncHighlights(parsedBooks: Book[], booksHighlightIds: any): Promise<any> {
+		const existingHighlightsList = await this.getNotionHighlights();
+		const { existingHighlights, booksWithNonExistingHighlights } = this.filterHighlights(parsedBooks, existingHighlightsList);
+		
+		booksWithNonExistingHighlights.forEach(async (book) => {
+			const { id, child_id} = booksHighlightIds[book.identifyBook()]
+			const synchedBlocks = await Promise.all(
+				book.highlights.map(async (highlight) => {
+					const contentArray = highlight.content.match(/.{1,2000}/g) || [highlight.content]; // decompose content to blocks of max size 2000
+					const psps = createHighlightTemplate(
+						this.highlights_db_id, 
+						highlight.id,
+						id,
+						contentArray,
+						highlight.timestamp,
+						highlight.location,
+						highlight.page,
+						highlight.notes
+					)
+
+					const { children, ...newPsps } = psps;
+
+					const highlightPage = await this.notion.pages.create(newPsps);
+
+					const synchedBlock = await this.notion.blocks.children.append({
+						block_id: highlightPage.id,
+						children: children
+					});
+					return {
+						type: "synced_block",
+						synced_block: {
+							synced_from: {
+								block_id: synchedBlock.results[0].id
+							}
+						}
+					}
+				}
+			));
+			
+			const response___ = await this.notion.blocks.children.append({
+				block_id: child_id,
+				children: synchedBlocks
+			});
+			
+		});
+
+	}
+
+	public async getNotionBooks(): Promise<any[]> {
+		const booksList: any[] = [];
+		let cursor_books: string | undefined = undefined;
+
+		do {
+			const response = await this.notion.databases.query({
+				database_id: this.books_db_id,
+				start_cursor: cursor_books,
+				page_size: 100,
+			});
+
+			booksList.push(...response.results);
+			cursor_books = response.next_cursor;
+		} while (cursor_books);
+
+		return booksList
+	}
+
+	public async syncBooks(parsedBooks: Book[]): Promise<any> {
+		const existingBooksList = await this.getNotionBooks()
 		const { existingBooks, nonExistingBooks } = this.filterBooks(parsedBooks, existingBooksList);
 
 		const createPagePromises = nonExistingBooks.map(async (book) => {
@@ -65,11 +179,11 @@ class NotionSyncController {
 				});
 				const lastChildId = response_child.results[response_child.results.length - 1]?.id;
 
-				return { title: element.title, author: element.author, child_id: lastChildId };
+				return { [`${element.title}-${element.author}`]: { id: element.id, child_id: lastChildId } };
 			})
 		);
 
-		return finalResult
+		return finalResult.reduce((acc, obj) => ({ ...acc, ...obj }), {});
 	}
 
 }

@@ -1,3 +1,5 @@
 node_modules
 My Clippings.txt
 dist
+.env
+package-lock.json

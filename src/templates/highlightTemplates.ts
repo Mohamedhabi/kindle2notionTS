@@ -3,7 +3,7 @@ export const createHighlightTemplate = (
     database_id: string,
     id: string,
     book: string,
-    content: string,
+    content: string[],
     timestamp: string,
     location?: { start: number; end?: number },
     page?: { start: number; end?: number },
@@ -24,7 +24,7 @@ export const createHighlightTemplate = (
                     {
                         type: 'text',
                         text: {
-                        content: content.substring(0, 10),
+                        content: content[0].substring(0, 10),
                         },
                     },
                 ],
@@ -72,12 +72,7 @@ export const createHighlightTemplate = (
                         {
                            type: "quote",
                            quote: {
-                                rich_text: [{
-                                    type: "text",
-                                    text: {
-                                        content: content,
-                                    },
-                            }],
+                                rich_text: content.map((c) => {return {type: "text", text: { content: c}}})
                            }
                         },
                         {

@@ -12,7 +12,8 @@
   "author": "Mohamed HABI",
   "license": "MIT",
   "dependencies": {
-    "@notionhq/client": "^2.2.14"
+    "@notionhq/client": "^2.2.14",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
