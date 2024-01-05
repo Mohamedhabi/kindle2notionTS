@@ -78,12 +78,26 @@ export const createHighlightTemplate = (
                         {
                             type: "paragraph",
                             paragraph: {
-                              rich_text: [{
-                                type: "text",
-                                text: {
-                                    content: `${timestamp} | Location: ${location ? (location.end ? `${location.start}-${location.end}` : `${location.start}`) : 'N/A'}${page ? ` | Page: ${page.end ? `${page.start}-${page.end}` : `${page.start}`}` : ''}`,
-                                }
-                              }],
+                              rich_text: [
+                                {
+                                    type: "text",
+                                    text: {
+                                        content: `${timestamp} | Location: `,
+                                    }
+                                },
+                                { 
+                                    type: "text",
+                                    text: {
+                                        content: `${location ? (location.end ? `${location.start}-${location.end}` : `${location.start}`) : 'N/A'}`,
+                                    },
+                                },
+                                {
+                                    type: "text",
+                                    text: {
+                                        content: `${page.start ? ` | Page: ${page.end ? `${page.start}-${page.end}` : `${page.start}`}` : ''}`,
+                                    }
+                                },
+                            ],
                           }
                         }
                     ]
