@@ -102,7 +102,8 @@ class NotionSyncController {
 						highlight.timestamp,
 						highlight.location,
 						highlight.page,
-						highlight.note
+						highlight.note,
+						highlight.noteId
 					)
 
 					const { children, ...newPsps } = psps;

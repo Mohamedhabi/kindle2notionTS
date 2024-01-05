@@ -8,7 +8,7 @@ export const createHighlightTemplate = (
     location?: { start: number; end?: number },
     page?: { start: number; end?: number },
     note?: { content: string; timestamp?: string },
-    NoteId?: string
+    noteId?: string
   ): any => {
     const contentArray = content.match(/.{1,2000}/g) || [content]; // decompose content to blocks of max size 2000
     
@@ -53,12 +53,12 @@ export const createHighlightTemplate = (
                     name: "Unprocessed"
                 }
             },
-            NotesIds: {
+            NoteId: {
                 rich_text: [
                     {
                         type: "text",
                         text: {
-                            content: (NoteId? NoteId: ''),
+                            content: (noteId? noteId: ''),
                         },
                     },
                 ],
