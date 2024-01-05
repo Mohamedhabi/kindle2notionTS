@@ -94,6 +94,43 @@ class NotionSyncController {
 			const { id, child_id} = booksHighlightIds[book.identifyBook()]
 			const synchedBlocks = await Promise.all(
 				book.highlights.map(async (highlight) => {
+					const psps = createHighlightTemplate(
+						this.highlights_db_id, 
+						highlight.id,
+						id,
+						highlight.content,
+						highlight.timestamp,
+						highlight.location,
+						highlight.page,
+						highlight.note
+					)
+
+					const { children, ...newPsps } = psps;
+
+					const highlightPage = await this.notion.pages.create(newPsps);
+
+					const synchedBlock = await this.notion.blocks.children.append({
+						block_id: highlightPage.id,
+						children: children
+					});
+					return {
+						type: "synced_block",
+						synced_block: {
+							synced_from: {
+								block_id: synchedBlock.results[0].id
+							}
+						}
+					}
+				}
+			));
+
+			const response___ = await this.notion.blocks.children.append({
+				block_id: child_id,
+				children: synchedBlocks
+			});
+
+			const synchedBlocksSoloNotes = await Promise.all(
+				book.soloNotes.map(async (highlight) => {
 					const contentArray = highlight.content.match(/.{1,2000}/g) || [highlight.content]; // decompose content to blocks of max size 2000
 					const psps = createHighlightTemplate(
 						this.highlights_db_id, 
@@ -103,7 +140,8 @@ class NotionSyncController {
 						highlight.timestamp,
 						highlight.location,
 						highlight.page,
-						highlight.notes
+						highlight.note,
+						highlight.NoteId
 					)
 
 					const { children, ...newPsps } = psps;
@@ -125,9 +163,9 @@ class NotionSyncController {
 				}
 			));
 			
-			const response___ = await this.notion.blocks.children.append({
+			const response__ = await this.notion.blocks.children.append({
 				block_id: child_id,
-				children: synchedBlocks
+				children: synchedBlocksSoloNotes
 			});
 			
 		});

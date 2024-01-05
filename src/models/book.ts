@@ -29,21 +29,25 @@ export class Book {
 	}
 
 	integrateNotesInHighlights(): void {
-		var newSoloNotes: Highlight[] = [];
-
 		this.soloNotes.map((note) => {
 			const highlight = this.highlights.find((highlight) => 
                 highlight.location.start <= note.location.start && highlight.location.end >= note.location.start
 			);
 
 			if (highlight) {
-				highlight.notes = highlight.notes ? [...highlight.notes, note] : [note];
+				highlight.note = note
 			} else {
-				newSoloNotes.push(note);
+				this.highlights.push(new Highlight(
+					"",
+					note.timestamp,
+					note.location,
+					note.page,
+					note
+				));
 			}
 		});
 
-		this.soloNotes = newSoloNotes;
+		this.soloNotes = [];
 	}
 
 	updateHighlitIds(): void {

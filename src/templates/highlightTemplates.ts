@@ -3,14 +3,16 @@ export const createHighlightTemplate = (
     database_id: string,
     id: string,
     book: string,
-    content: string[],
+    content: string,
     timestamp: string,
     location?: { start: number; end?: number },
     page?: { start: number; end?: number },
-    notes?: { content: string; timestamp?: string }[],
-    NotesIds?: string
+    note?: { content: string; timestamp?: string },
+    NoteId?: string
   ): any => {
-    return {
+    const contentArray = content.match(/.{1,2000}/g) || [content]; // decompose content to blocks of max size 2000
+    
+    const highlightTemplate =  {
         parent: {
             database_id: database_id
         },
@@ -24,7 +26,7 @@ export const createHighlightTemplate = (
                     {
                         type: 'text',
                         text: {
-                        content: content[0].substring(0, 50),
+                        content: contentArray[0].substring(0, 50),
                         },
                     },
                 ],
@@ -56,7 +58,7 @@ export const createHighlightTemplate = (
                     {
                         type: "text",
                         text: {
-                            content: (NotesIds? NotesIds: ''),
+                            content: (NoteId? NoteId: ''),
                         },
                     },
                 ],
@@ -68,11 +70,10 @@ export const createHighlightTemplate = (
                 synced_block: {
                     synced_from: null,
                     children: [
-                        ...createNotesTemplate(notes),
                         {
                            type: "quote",
                            quote: {
-                                rich_text: content.map((c) => {return {type: "text", text: { content: c}}})
+                                rich_text: contentArray.map((c) => {return {type: "text", text: { content: c}}})
                            }
                         },
                         {
@@ -99,29 +100,66 @@ export const createHighlightTemplate = (
                                 },
                             ],
                           }
-                        }
+                        },
+                        {
+                            //...other keys excluded
+                            "type": "divider",
+                            //...other keys excluded
+                            "divider": {}
+                        },
+                        {
+                            type: "heading_3",
+                            heading_3: {
+                                rich_text: [
+                                    {
+                                        type: "text",
+                                        text: {
+                                            content: "Notes",
+                                        }
+                                    }
+                                ],
+                                // is_toggleable: true,
+                            },
+                        },
+                        
                     ]
                 }
             },
         ]
     };
-};
 
+    if(note){
+        const noteContentArray = note.content.match(/.{1,2000}/g) || [note.content];
 
-export const createNotesTemplate = (
-    notes?: { content: string; timestamp?: string }[]
-  ): any[] => {
-    return (notes || []).map((note, index) => ({
-      type: "paragraph",
-      paragraph: {
-        rich_text: [
-          {
-            type: "text",
-            text: {
-              content: `${index + 1}. ${note.content} (${note.timestamp || 'No timestamp'})`,
+        const newChildren = [
+            {
+              type: "paragraph",
+              paragraph: {
+                rich_text: noteContentArray.map((c) => ({ type: "text", text: { content: c } })),
+              },
             },
-          },
-        ],
-      },
-    }));
-  };  
+            {
+              type: "paragraph",
+              paragraph: {
+                rich_text: [
+                  {
+                    type: "text",
+                    text: {
+                      content: `${timestamp}`,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+                "type": "divider",
+                "divider": {}
+              }
+          ];
+          
+          highlightTemplate.children[0]['synced_block']["children"].push(...newChildren);
+          
+    }
+
+    return highlightTemplate
+};

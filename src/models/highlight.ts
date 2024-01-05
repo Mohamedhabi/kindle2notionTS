@@ -5,24 +5,24 @@ export class Highlight {
 	timestamp: string;
 	location: { start: number; end: number | null } | null;
 	page: { start: number; end: number | null } | null;
-	notes: Highlight[] | null;
+	note: Highlight | null;
 	id: string | null;
-	notesIds: string[] | null;
+	noteId: string | null;
   
 	constructor(
 		content: string,
 		timestamp: string,
 		location: { start: number; end: number | null } | null = null,
 		page: { start: number; end: number | null } | null = null,
-		notes: Highlight[] | null = []
+		note: Highlight | null = null
 	) {
 		this.content = content;
 		this.location = location;
 		this.page = page;
 		this.timestamp = timestamp;
-		this.notes = notes;
+		this.note = note;
 		this.id = null;
-		this.notesIds = [];
+		this.noteId = null;
 	}
 	
 
@@ -31,10 +31,10 @@ export class Highlight {
 	}
   
     public updateIds(book_title: string): void {
-      	this.id = this.calculateHash(book_title + this.content);
-    	this.notesIds = this.notes.map((note) => {
-				return this.calculateHash(note.content);
-		})
+      	this.id = this.calculateHash(book_title + this.location.start + this.content);
+		if(this.note){
+			this.noteId = this.calculateHash(book_title + this.location.start +this.note.content);
+		}
     }
   }
   
