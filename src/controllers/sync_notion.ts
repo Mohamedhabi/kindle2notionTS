@@ -2,7 +2,7 @@ import { Client } from '@notionhq/client';
 import { Book } from '../models/book.js';
 import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 import { createBookTemplate } from '../templates/bookTemplate.js';
-import { createHighlightTemplate } from '../templates/highlightTemplates.js';
+import { createHighlightTemplate, createNoteTemplate } from '../templates/highlightTemplates.js';
 
 class NotionSyncController {    
 	private notion: Client;
@@ -58,14 +58,34 @@ class NotionSyncController {
 				return ! existingHighlights.hasOwnProperty(highlight.id);
 			})
 
-			copiedBook.soloNotes = copiedBook.soloNotes.filter((highlight) => {
-				return ! existingHighlights.hasOwnProperty(highlight.id);
+			return copiedBook
+		});
+		
+		return {existingHighlights, booksWithNonExistingHighlights}
+	}
+
+	public filterNotes(parsedBooks: Book[], existingHighlightsList: any[], existingHighlights: any[]): any {
+		const existingNotes = existingHighlightsList.reduce((accumulator, result: DatabaseObjectResponse) => {
+			const id = result.id;
+			const idNotetProp = result.properties?.NoteId['rich_text'];
+			const idNote = idNotetProp.length === 0 ? "" : idNotetProp[0]['text']['content'];
+		  
+			accumulator[idNote] = id;
+		  
+			return accumulator;
+		}, {} as Record<string, string>);		  
+
+		const booksWithNonExistingNotes: Book[] = parsedBooks.map((book) => {
+			const copiedBook = Book.copy(book);
+
+			copiedBook.highlights = copiedBook.highlights.filter((highlight) => {
+				return highlight.noteId && (! existingNotes.hasOwnProperty(highlight.noteId) && existingHighlights.hasOwnProperty(highlight.id))
 			})
 
 			return copiedBook
 		});
 		
-		return {existingHighlights, booksWithNonExistingHighlights}
+		return {existingNotes, booksWithNonExistingNotes}
 	}
 
 	public async getNotionHighlights(): Promise<any[]> {
@@ -89,6 +109,7 @@ class NotionSyncController {
 	public async syncHighlights(parsedBooks: Book[], booksHighlightIds: any): Promise<any> {
 		const existingHighlightsList = await this.getNotionHighlights();
 		const { existingHighlights, booksWithNonExistingHighlights } = this.filterHighlights(parsedBooks, existingHighlightsList);
+		const { existingNotes, booksWithNonExistingNotes } = this.filterNotes(parsedBooks, existingHighlightsList, existingHighlights);
 		
 		booksWithNonExistingHighlights.forEach(async (book) => {
 			const { id, child_id} = booksHighlightIds[book.identifyBook()]
@@ -125,51 +146,45 @@ class NotionSyncController {
 				}
 			));
 
-			const response___ = await this.notion.blocks.children.append({
+			await this.notion.blocks.children.append({
 				block_id: child_id,
 				children: synchedBlocks
 			});
-
-			const synchedBlocksSoloNotes = await Promise.all(
-				book.soloNotes.map(async (highlight) => {
-					const contentArray = highlight.content.match(/.{1,2000}/g) || [highlight.content]; // decompose content to blocks of max size 2000
-					const psps = createHighlightTemplate(
-						this.highlights_db_id, 
-						highlight.id,
-						id,
-						contentArray,
-						highlight.timestamp,
-						highlight.location,
-						highlight.page,
-						highlight.note,
-						highlight.NoteId
-					)
-
-					const { children, ...newPsps } = psps;
-
-					const highlightPage = await this.notion.pages.create(newPsps);
-
-					const synchedBlock = await this.notion.blocks.children.append({
-						block_id: highlightPage.id,
-						children: children
-					});
-					return {
-						type: "synced_block",
-						synced_block: {
-							synced_from: {
-								block_id: synchedBlock.results[0].id
-							}
-						}
-					}
-				}
-			));
-			
-			const response__ = await this.notion.blocks.children.append({
-				block_id: child_id,
-				children: synchedBlocksSoloNotes
-			});
-			
 		});
+
+		booksWithNonExistingNotes.forEach(async (book) => {
+			await Promise.all(
+				book.highlights.map(async (highlight) => {
+					const block_id = existingHighlights[highlight.id]
+					const response = await this.notion.blocks.children.list({
+						block_id: block_id,
+						page_size: 50,
+					});
+
+					await this.notion.blocks.children.append({
+						block_id: response.results[0].id,
+						children: createNoteTemplate(highlight.note)
+					});
+
+					await this.notion.pages.update({
+						page_id: block_id,
+						properties: {
+							NoteId: {
+								rich_text: [
+									{
+										type: "text",
+										text: {
+											content: (highlight.noteId),
+										},
+									},
+								],
+							},
+						},
+					});
+				})
+
+			)
+		})
 
 	}
 

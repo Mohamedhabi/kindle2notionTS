@@ -102,10 +102,8 @@ export const createHighlightTemplate = (
                           }
                         },
                         {
-                            //...other keys excluded
-                            "type": "divider",
-                            //...other keys excluded
-                            "divider": {}
+                            type: "divider",
+                            divider: {}
                         },
                         {
                             type: "heading_3",
@@ -129,37 +127,43 @@ export const createHighlightTemplate = (
     };
 
     if(note){
-        const noteContentArray = note.content.match(/.{1,2000}/g) || [note.content];
-
-        const newChildren = [
-            {
-              type: "paragraph",
-              paragraph: {
-                rich_text: noteContentArray.map((c) => ({ type: "text", text: { content: c } })),
-              },
-            },
-            {
-              type: "paragraph",
-              paragraph: {
-                rich_text: [
-                  {
-                    type: "text",
-                    text: {
-                      content: `${timestamp}`,
-                    },
-                  },
-                ],
-              },
-            },
-            {
-                "type": "divider",
-                "divider": {}
-              }
-          ];
+        const newChildren = createNoteTemplate(note)
           
-          highlightTemplate.children[0]['synced_block']["children"].push(...newChildren);
+        highlightTemplate.children[0]['synced_block']["children"].push(...newChildren);
           
     }
 
     return highlightTemplate
 };
+
+export const createNoteTemplate = (
+    note?: { content: string; timestamp?: string },
+  ): any => {
+    const noteContentArray = note.content.match(/.{1,2000}/g) || [note.content];
+
+    return [
+        {
+          type: "paragraph",
+          paragraph: {
+            rich_text: noteContentArray.map((c) => ({ type: "text", text: { content: c } })),
+          },
+        },
+        {
+          type: "paragraph",
+          paragraph: {
+            rich_text: [
+              {
+                type: "text",
+                text: {
+                  content: `${note.timestamp}`,
+                },
+              },
+            ],
+          },
+        },
+        {
+            type: "divider",
+            divider: {}
+          }
+    ];
+}
