@@ -24,7 +24,8 @@ export function parseClippings(inputData: string): Book[] {
                     currentBook = existingBook;
                 } else {
                     // If the book doesn't exist, create a new one
-                    books.push(new Book(title, author, "", 0, [], []));
+                    currentBook = new Book(title, author, "", 0, [], []);
+                    books.push(currentBook);
                 }
             }
 
